@@ -21,7 +21,7 @@ var birdHeight = 35;
 
 function initPipes() {
   pipes[0] = {
-    x: 500,
+    x: 2000,
     cst: 180 * Math.random() + 180
   };
   for (var i = 1; i < 20; i++) {
