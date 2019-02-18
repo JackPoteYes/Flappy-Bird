@@ -12,7 +12,12 @@ var pace = 4;
 var score = 0;
 var scoreTxt;
 var readyToScore = true;
-var pipeGap = 800;
+var pipeGap = 200;
+var pipeWidth = 80;
+var pipeHeight = 1000;
+var birdXPos = 50;
+var birdWidth = 60;
+var birdHeight = 35;
 
 function initPipes() {
   pipes[0] = {
@@ -95,10 +100,17 @@ function pwh(percent) {
 }
 
 function drawPipeCouple(pipe) {
+  ctx.lineWidth = 8;
   // Bottom
-  ctx.drawImage(images.pipeBottom, pipe.x, pipe.cst, 80, 600);
+  ctx.drawImage(images.pipeBottom, pipe.x, pipe.cst, pipeWidth, pipeHeight);
   // Top
-  ctx.drawImage(images.pipeTop, pipe.x, pipe.cst - pipeGap, 80, 600);
+  ctx.drawImage(
+    images.pipeTop,
+    pipe.x,
+    pipe.cst - pipeGap - pipeHeight,
+    pipeWidth,
+    pipeHeight
+  );
 }
 
 function updatePipes() {
@@ -130,20 +142,20 @@ function checkFail() {
 
   function touchesBottomPipe() {
     return (
-      birdYPos + 35 >= pipes[0].cst &&
-      (50 + 60 >= pipes[0].x && 50 + 60 <= pipes[0].x + 80)
+      birdYPos + birdHeight >= pipes[0].cst &&
+      (birdXPos + birdWidth >= pipes[0].x && birdXPos <= pipes[0].x + pipeWidth)
     );
   }
 
   function touchesTopPipe() {
     return (
       birdYPos <= pipes[0].cst - pipeGap &&
-      (50 + 60 >= pipes[0].x && 50 + 60 <= pipes[0].x + 80)
+      (birdXPos + birdWidth >= pipes[0].x && birdXPos <= pipes[0].x + pipeWidth)
     );
   }
 
   function touchesGround() {
-    return birdYPos + 35 >= cvs.height;
+    return birdYPos + birdHeight >= cvs.height;
   }
 }
 
@@ -171,7 +183,7 @@ function draw() {
   checkSuccess();
   updatePipes();
   ctx.drawImage(images.bg, 0, 0, cvs.width, cvs.height);
-  ctx.drawImage(images.bird, 50, birdPos.next(), 60, 35);
+  ctx.drawImage(images.bird, birdXPos, birdPos.next(), birdWidth, birdHeight);
   pipes.map(pipe => {
     drawPipeCouple(pipe);
   });
