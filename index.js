@@ -12,21 +12,22 @@ var pace = 4;
 var score = 0;
 var scoreTxt;
 var readyToScore = true;
-var pipeGap = 200;
-var pipeWidth = 80;
-var pipeHeight = 1000;
-var birdXPos = 50;
-var birdWidth = 60;
-var birdHeight = 35;
+var pipeGap;
+var pipeWidth;
+var pipeHeight;
+var birdXPos;
+var birdWidth;
+var birdHeight;
+var pipeInterval;
 
 function initPipes() {
   pipes[0] = {
-    x: 2000,
+    x: 500,
     cst: 180 * Math.random() + 180
   };
   for (var i = 1; i < 20; i++) {
     pipes.push({
-      x: pipes[i - 1].x + 400,
+      x: pipes[i - 1].x + pipeInterval,
       cst: 300 * Math.random() + 300
     });
   }
@@ -95,7 +96,7 @@ function pwc(percent) {
   return (percent * cvs.width) / 100;
 }
 
-function pwh(percent) {
+function phc(percent) {
   return (percent * cvs.height) / 100;
 }
 
@@ -127,7 +128,7 @@ function updatePipes() {
     if (pipes[0].x < -80) {
       pipes.shift();
       pipes.push({
-        x: pipes[pipes.length - 1].x + 400,
+        x: pipes[pipes.length - 1].x + pipeInterval,
         cst: 180 * Math.random() + 180
       });
       readyToScore = true;
@@ -160,7 +161,7 @@ function checkFail() {
 }
 
 function checkSuccess() {
-  if (readyToScore && pipes[0].x + 80 <= 50) {
+  if (readyToScore && pipes[0].x + pipeWidth <= birdXPos) {
     addOneSuccess();
   }
   function addOneSuccess() {
@@ -178,11 +179,12 @@ function updatePace() {
 }
 
 function draw() {
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
   updatePace();
   checkFail();
   checkSuccess();
   updatePipes();
-  ctx.drawImage(images.bg, 0, 0, cvs.width, cvs.height);
+  // ctx.drawImage(images.bg, 0, 0, cvs.width, cvs.height);
   ctx.drawImage(images.bird, birdXPos, birdPos.next(), birdWidth, birdHeight);
   pipes.map(pipe => {
     drawPipeCouple(pipe);
@@ -200,13 +202,27 @@ function initGlobals() {
   flapNoise = new Audio("src/flap.mp3");
 }
 
+function initProportions() {
+  // Bird
+  birdHeight = phc(6);
+  birdWidth = pwc(11);
+  birdXPos = pwc(5);
+
+  // Pipes
+  pipeWidth = pwc(12);
+  pipeHeight = phc(100);
+  pipeGap = phc(25);
+  pipeInterval = pwc(60);
+}
+
 function game() {
   initGlobals();
   cvs = document.getElementById("canvas");
-  cvs.width = pw(100);
-  cvs.height = ph(100);
+  cvs.width = pw(28);
+  cvs.height = ph(75);
+  initProportions();
   ctx = cvs.getContext("2d");
-  birdPos = makeBirdJumpIterator(200, (advancement = 23));
+  birdPos = makeBirdJumpIterator(phc(20), (advancement = 23));
   scoreTxt = document.getElementById("score");
   bindEvents();
   initPipes();
