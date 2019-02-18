@@ -1,7 +1,10 @@
-var images = getImages();
-var flapNoise = new Audio("src/flap.mp3");
-var docHeight, docWidth, cvs, ctx;
-var pipes = [];
+var images,
+  flapNoise,
+  docHeight,
+  docWidth,
+  cvs,
+  ctx,
+  pipes = [];
 var birdPos;
 var birdYPos;
 var count = 1;
@@ -9,6 +12,7 @@ var pace = 4;
 var score = 0;
 var scoreTxt;
 var readyToScore = true;
+var pipeGap = 800;
 
 function initPipes() {
   pipes[0] = {
@@ -18,7 +22,7 @@ function initPipes() {
   for (var i = 1; i < 20; i++) {
     pipes.push({
       x: pipes[i - 1].x + 400,
-      cst: 180 * Math.random() + 180
+      cst: 300 * Math.random() + 300
     });
   }
 }
@@ -34,6 +38,7 @@ function bindEvents() {
 
 function eventBus(event) {
   if (event === "space") {
+    playFlap();
     birdJump();
   }
 }
@@ -51,8 +56,11 @@ function makeBirdJumpIterator(yInit, advancement) {
   return iterator;
 }
 
-function birdJump() {
+function playFlap() {
   flapNoise.play();
+}
+
+function birdJump() {
   birdPos = makeBirdJumpIterator(birdYPos);
 }
 
@@ -65,7 +73,8 @@ function getImages() {
   return {
     bird: getBySrc("src/bird.png"),
     birdRed: getBySrc("src/bird-red.png"),
-    pipe: getBySrc("src/pipe.png"),
+    pipeBottom: getBySrc("src/pipe-bottom.png"),
+    pipeTop: getBySrc("src/pipe-top.png"),
     bg: getBySrc("src/bg.png")
   };
 }
@@ -77,13 +86,19 @@ function ph(percent) {
   return (percent * docHeight) / 100;
 }
 
+function pwc(percent) {
+  return (percent * cvs.width) / 100;
+}
+
+function pwh(percent) {
+  return (percent * cvs.height) / 100;
+}
+
 function drawPipeCouple(pipe) {
   // Bottom
-  ctx.drawImage(images.pipe, pipe.x, pipe.cst, 80, 400);
+  ctx.drawImage(images.pipeBottom, pipe.x, pipe.cst, 80, 600);
   // Top
-  ctx.setTransform(1, 0, 0, -1, 0, cvs.height);
-  ctx.drawImage(images.pipe, pipe.x, -pipe.cst + 600, 80, 400);
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(images.pipeTop, pipe.x, pipe.cst - pipeGap, 80, 600);
 }
 
 function updatePipes() {
@@ -122,7 +137,7 @@ function checkFail() {
 
   function touchesTopPipe() {
     return (
-      birdYPos <= pipes[0].cst - 150 &&
+      birdYPos <= pipes[0].cst - pipeGap &&
       (50 + 60 >= pipes[0].x && 50 + 60 <= pipes[0].x + 80)
     );
   }
@@ -166,12 +181,18 @@ function draw() {
 
 // 210 <= x <= 390
 
-function main() {
+function initGlobals() {
   docHeight = document.body.clientHeight;
   docWidth = document.body.clientWidth;
+  images = getImages();
+  flapNoise = new Audio("src/flap.mp3");
+}
+
+function game() {
+  initGlobals();
   cvs = document.getElementById("canvas");
-  cvs.width = pw(75);
-  cvs.height = ph(60);
+  cvs.width = pw(100);
+  cvs.height = ph(100);
   ctx = cvs.getContext("2d");
   birdPos = makeBirdJumpIterator(200, (advancement = 23));
   scoreTxt = document.getElementById("score");
@@ -180,4 +201,4 @@ function main() {
   draw();
 }
 
-setTimeout(main, 300);
+setTimeout(game, 300);
