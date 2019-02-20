@@ -22,6 +22,7 @@ var birdHeight;
 var pipeInterval;
 var groundHeight;
 var failGame = false;
+var gameStarted = false;
 var birdImage;
 
 function initPipes() {
@@ -48,12 +49,17 @@ function bindEvents() {
 
 function eventBus(event) {
   if (event === "space") {
+    if (!gameStarted) {
+      gameStarted = true;
+    }
     playFlap();
     birdJump();
   } else if (event === "fail") {
     birdImage = images.birdRed;
     failGame = true;
   } else if (event === "success") {
+    score++;
+    readyToScore = false;
   }
 }
 
@@ -63,6 +69,9 @@ function makeBirdJumpIterator(yInit, advancement) {
     next: function updateJumpBirdIterator() {
       x++;
       y = -0.035 * Math.pow(x - 18, 2) + 12;
+      if (y <= 0 && !gameStarted) {
+        x = 0;
+      }
       birdYPos = yInit - phc(y);
       return birdYPos;
     }
@@ -124,8 +133,10 @@ function drawPipeCouple(pipe) {
 }
 
 function updatePipes() {
-  replacePipeIfNeeded();
-  movePipes(pwc(0.1 * pace));
+  if (gameStarted) {
+    replacePipeIfNeeded();
+    movePipes(pwc(0.1 * pace));
+  }
 
   function movePipes(move) {
     pipes.map(pipe => {
@@ -171,20 +182,20 @@ function checkFail() {
 
 function checkSuccess() {
   if (readyToScore && pipes[0].x + pipeWidth <= birdXPos) {
-    addOneSuccess();
-  }
-  function addOneSuccess() {
-    readyToScore = false;
-    score++;
-    scoreTxt.textContent = "Score: " + score.toString();
+    eventBus("success");
   }
 }
 
 function updatePace() {
+  if (!gameStarted) return;
   if (count % 250 === 0) {
     count = 0;
     pace++;
   }
+}
+
+function drawScore() {
+  ctx.fillText(score.toString(), pwc(40), phc(10));
 }
 
 function draw() {
@@ -198,6 +209,7 @@ function draw() {
     drawPipeCouple(pipe);
   });
   updateGrounds();
+  drawScore();
   drawGrounds();
   if (!failGame) {
     requestAnimationFrame(draw);
@@ -274,7 +286,9 @@ function game() {
   cvs.height = ph(85);
   initProportions();
   ctx = cvs.getContext("2d");
-  birdPos = makeBirdJumpIterator(phc(20), (advancement = 23));
+  ctx.fillStyle = "white";
+  ctx.font = pwc(20).toString() + "px Monofett";
+  birdPos = makeBirdJumpIterator(phc(30), (advancement = 0));
   scoreTxt = document.getElementById("score");
   bindEvents();
   initPipes();
