@@ -4,11 +4,12 @@ var images,
   docWidth,
   cvs,
   ctx,
-  pipes = [];
+  pipes = [],
+  grounds = [];
 var birdPos;
 var birdYPos;
 var count = 1;
-var pace = 4;
+var pace = 5;
 var score = 0;
 var scoreTxt;
 var readyToScore = true;
@@ -19,13 +20,16 @@ var birdXPos;
 var birdWidth;
 var birdHeight;
 var pipeInterval;
+var groundHeight;
+var failGame = false;
+var birdImage;
 
 function initPipes() {
   pipes[0] = {
-    x: 500,
+    x: pwc(130),
     cst: 180 * Math.random() + 180
   };
-  for (var i = 1; i < 20; i++) {
+  for (var i = 1; i < 2; i++) {
     pipes.push({
       x: pipes[i - 1].x + pipeInterval,
       cst: 300 * Math.random() + 300
@@ -46,6 +50,10 @@ function eventBus(event) {
   if (event === "space") {
     playFlap();
     birdJump();
+  } else if (event === "fail") {
+    birdImage = images.birdRed;
+    failGame = true;
+  } else if (event === "success") {
   }
 }
 
@@ -54,8 +62,8 @@ function makeBirdJumpIterator(yInit, advancement) {
   const iterator = {
     next: function updateJumpBirdIterator() {
       x++;
-      y = -0.15 * Math.pow(x - 23, 2) + 80;
-      birdYPos = yInit - y;
+      y = -0.035 * Math.pow(x - 18, 2) + 12;
+      birdYPos = yInit - phc(y);
       return birdYPos;
     }
   };
@@ -81,6 +89,7 @@ function getImages() {
     birdRed: getBySrc("src/bird-red.png"),
     pipeBottom: getBySrc("src/pipe-bottom.png"),
     pipeTop: getBySrc("src/pipe-top.png"),
+    ground: getBySrc("src/ground.png"),
     bg: getBySrc("src/bg.png")
   };
 }
@@ -116,11 +125,11 @@ function drawPipeCouple(pipe) {
 
 function updatePipes() {
   replacePipeIfNeeded();
-  movePipes();
+  movePipes(pwc(0.1 * pace));
 
-  function movePipes() {
+  function movePipes(move) {
     pipes.map(pipe => {
-      pipe.x -= pace;
+      pipe.x -= move;
     });
   }
 
@@ -138,7 +147,7 @@ function updatePipes() {
 
 function checkFail() {
   if (touchesBottomPipe() || touchesTopPipe() || touchesGround()) {
-    alert("Fail");
+    eventBus("fail");
   }
 
   function touchesBottomPipe() {
@@ -156,7 +165,7 @@ function checkFail() {
   }
 
   function touchesGround() {
-    return birdYPos + birdHeight >= cvs.height;
+    return birdYPos + birdHeight >= cvs.height - groundHeight;
   }
 }
 
@@ -184,13 +193,46 @@ function draw() {
   checkFail();
   checkSuccess();
   updatePipes();
-  // ctx.drawImage(images.bg, 0, 0, cvs.width, cvs.height);
-  ctx.drawImage(images.bird, birdXPos, birdPos.next(), birdWidth, birdHeight);
+  ctx.drawImage(birdImage, birdXPos, birdPos.next(), birdWidth, birdHeight);
   pipes.map(pipe => {
     drawPipeCouple(pipe);
   });
-  requestAnimationFrame(draw);
+  updateGrounds();
+  drawGrounds();
+  if (!failGame) {
+    requestAnimationFrame(draw);
+  }
   count++;
+}
+
+function drawGrounds() {
+  grounds.map(groundPosX => {
+    ctx.drawImage(
+      images.ground,
+      groundPosX,
+      cvs.height - groundHeight,
+      cvs.width,
+      groundHeight
+    );
+  });
+}
+
+function updateGrounds() {
+  replaceGroundIfNeeded();
+  moveGrounds(pwc(0.1 * pace));
+
+  function moveGrounds(move) {
+    for (var i = 0; i < grounds.length; i++) {
+      grounds[i] -= move;
+    }
+  }
+
+  function replaceGroundIfNeeded() {
+    if (grounds[0] <= -cvs.width) {
+      grounds.shift();
+      grounds.push(grounds[grounds.length - 1] + cvs.width);
+    }
+  }
 }
 
 // 210 <= x <= 390
@@ -200,6 +242,7 @@ function initGlobals() {
   docWidth = document.body.clientWidth;
   images = getImages();
   flapNoise = new Audio("src/flap.mp3");
+  birdImage = images.bird;
 }
 
 function initProportions() {
@@ -213,19 +256,29 @@ function initProportions() {
   pipeHeight = phc(100);
   pipeGap = phc(25);
   pipeInterval = pwc(60);
+
+  // Ground
+  groundHeight = phc(27);
+}
+
+function initGrounds() {
+  for (var i = 0; i < 2; i++) {
+    grounds.push(i * cvs.width);
+  }
 }
 
 function game() {
   initGlobals();
   cvs = document.getElementById("canvas");
   cvs.width = pw(28);
-  cvs.height = ph(75);
+  cvs.height = ph(85);
   initProportions();
   ctx = cvs.getContext("2d");
   birdPos = makeBirdJumpIterator(phc(20), (advancement = 23));
   scoreTxt = document.getElementById("score");
   bindEvents();
   initPipes();
+  initGrounds();
   draw();
 }
 
