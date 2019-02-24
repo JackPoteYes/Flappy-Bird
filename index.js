@@ -57,6 +57,13 @@ function eventBus(event) {
   } else if (event === "fail") {
     birdImage = images.birdRed;
     failGame = true;
+    let scores = JSON.parse(window.localStorage.getItem("scores"));
+    scores.push({
+      date: new Date(),
+      score: score,
+      id: Math.floor(Math.random() * 100000)
+    });
+    window.localStorage.setItem("scores", JSON.stringify(scores));
   } else if (event === "success") {
     score++;
     readyToScore = false;
@@ -68,7 +75,7 @@ function makeBirdJumpIterator(yInit, advancement) {
   const iterator = {
     next: function updateJumpBirdIterator() {
       x++;
-      y = -0.035 * Math.pow(x - 18, 2) + 12;
+      let y = -0.035 * Math.pow(x - 18, 2) + 12;
       if (y <= 0 && !gameStarted) {
         x = 0;
       }
@@ -279,8 +286,24 @@ function initGrounds() {
   }
 }
 
+function initScoreBoard() {
+  if (!window.localStorage.getItem("scores")) {
+    window.localStorage.setItem("scores", JSON.stringify([]));
+  }
+}
+
+function refreshScoreBoard() {
+  const scores = JSON.parse(window.localStorage.getItem("scores"));
+  console.log("Scores: ", scores);
+  ReactDOM.render(
+    <ScoreBoardComponent scores={scores} />,
+    document.getElementById("scoreBoard")
+  );
+}
+
 function game() {
   initGlobals();
+  initScoreBoard();
   cvs = document.getElementById("canvas");
   cvs.width = pw(28);
   cvs.height = ph(85);
@@ -288,7 +311,7 @@ function game() {
   ctx = cvs.getContext("2d");
   ctx.fillStyle = "white";
   ctx.font = pwc(20).toString() + "px Monofett";
-  birdPos = makeBirdJumpIterator(phc(30), (advancement = 0));
+  birdPos = makeBirdJumpIterator(phc(30));
   scoreTxt = document.getElementById("score");
   bindEvents();
   initPipes();
